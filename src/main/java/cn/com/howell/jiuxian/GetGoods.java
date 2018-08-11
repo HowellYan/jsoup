@@ -8,6 +8,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -33,9 +34,9 @@ public class GetGoods {
     private static Pattern save = Pattern.compile("<span>收藏 （<em>[\\d]+</em>） </span></a>");
 
     public static void main(String[] args){
-        //for (int i=1;i<10000;i++){
-            getGoodsJson(2);
-        //}
+        for (int i=1;i<10000;i++){
+            getGoodsJson(i);
+        }
 
     }
 
@@ -45,12 +46,16 @@ public class GetGoods {
             Document document = Jsoup.connect("http://www.jiuxian.com/goods-"+i+".html").get();
             //System.out.println(document.toString());
             if(!document.title().contains("页面出错啦")) {
-                getPrice(i);
+                ReptileGoodsInfo info = new ReptileGoodsInfo();
+                info.setId(i);
+                info.setPrice(getPrice(i));
+
                 Matcher matcher = save.matcher(document.html());
                 while (matcher.find()){
-                    System.out.println(matcher.group()); //收藏
+                    long collection = Long.parseLong(matcher.group().replaceAll("<span>收藏 （<em>","").replaceAll("</em>） </span></a>",""));
+                   //收藏
+                    info.setCollection(collection);
                 }
-
 
                 Elements scripts = document.select("script");
                 for (Element script : scripts) {
@@ -65,6 +70,11 @@ public class GetGoods {
                         System.out.println(url);
                         j++;
                         getGoodsImg(url, i+"_"+j+"_.jpg","d:\\image\\");
+                        if(info.getLbarr() == null){
+                            info.setLbarr(url); // 轮播图片
+                        }else{
+                            info.setLbarr(info.getLbarr()+";"+url); // 轮播图片
+                        }
                     }
 
                     matcher = BFD_INFO.matcher(str);
@@ -81,11 +91,32 @@ public class GetGoods {
                         //System.out.println(str);
                         JSONObject jsonObject = new JSONObject(str);
                         System.out.println(jsonObject.toString());
+                        String image_link = jsonObject.getString("image_link");
+                        String simage_link = jsonObject.getString("simage_link");
+                        String name = jsonObject.getString("name");
+                        String brand = jsonObject.getString("brand");
+                        String winery = jsonObject.getString("winery");
+                        String sn = jsonObject.getString("sn");
+                        String mtl = jsonObject.getString("mtl");
+                        String net_content = jsonObject.getString("net_content");
+                        String carton_size = jsonObject.getString("carton_size");
+                        JSONArray category = jsonObject.getJSONArray("category").getJSONArray(0);
+                        getGoodsImg(image_link,i+"_image_link_.jpg","d:\\image\\");
+                        getGoodsImg(image_link,i+"_simage_link_.jpg","d:\\image\\");
 
+                        info.setGoodsName(name);
+                        info.setGoodsType(category.getString(0));
+                        info.setGoodsBrand(brand);
+                        info.setWinery(winery);
+                        info.setGoodsSn(sn);
+                        info.setScent(mtl);
+                        info.setCartonSize(carton_size);
+                        info.setNetContent(net_content);
+                        info.setCover(image_link+";"+simage_link);
                     }
                 }
+                insert(info);
             }
-
         }
         catch (IOException e)
         {
@@ -100,7 +131,7 @@ public class GetGoods {
      * @param i
      * @throws IOException
      */
-    public static void getPrice(int i) throws IOException {
+    public static double getPrice(int i) throws IOException {
         String url = "http://www.jiuxian.com/pro/selectProActByProId.htm";
         HttpPost httpPost = new HttpPost(url);
         CloseableHttpClient client = HttpClients.createDefault();
@@ -128,9 +159,10 @@ public class GetGoods {
             respContent = EntityUtils.toString(he,"UTF-8");
             JSONObject jsonObject = new JSONObject(respContent);
             if(!jsonObject.isNull("act")){
-                System.out.println(jsonObject.getJSONObject("act").getDouble("markPrice"));
+                return jsonObject.getJSONObject("act").getDouble("markPrice");
             }
         }
+        return 0.0;
     }
 
 
@@ -193,7 +225,7 @@ public class GetGoods {
         Connection connection = getConnection();
         PreparedStatement preparedStatement  = null;
         try {
-            preparedStatement =  connection.prepareStatement("insert into reptile_goods_info(id,goods_sn,goods_name,sub_title,goods_type,goods_brand,place_origin,price,cover,ingesting_time,bottle_stopper,scent,grape_variety,collocation_food,storage_conditions,taste,net_content,color,carton_size,introduce,winery,description,materials,process)values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
+            preparedStatement =  connection.prepareStatement("insert into reptile_goods_info(id,goods_sn,goods_name,sub_title,goods_type,goods_brand,place_origin,price,cover,ingesting_time,bottle_stopper,scent,grape_variety,collocation_food,storage_conditions,taste,net_content,color,carton_size,introduce,winery,description,materials,process,collection,lbarr)values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
             preparedStatement.setLong(1, info.getId());
             preparedStatement.setString(2, info.getGoodsSn());
             preparedStatement.setString(3, info.getGoodsName());
@@ -218,6 +250,8 @@ public class GetGoods {
             preparedStatement.setString(22, info.getDescription());
             preparedStatement.setString(23, info.getMaterials());
             preparedStatement.setString(24, info.getProcess());
+            preparedStatement.setLong(25, info.getCollection());
+            preparedStatement.setString(26, info.getLbarr());
             int i= preparedStatement.executeUpdate();
             System.out.println(i);
             if(i>=1) {
