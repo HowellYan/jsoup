@@ -28,6 +28,13 @@
                 <artifactId>httpclient</artifactId>
                 <version>4.5.6</version>
             </dependency>
+            <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>6.0.6</version>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>
@@ -44,6 +51,10 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
     </dependencies>

@@ -4,7 +4,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
@@ -18,6 +17,10 @@ import org.jsoup.select.Elements;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -45,8 +48,9 @@ public class GetGoods {
                 getPrice(i);
                 Matcher matcher = save.matcher(document.html());
                 while (matcher.find()){
-                    System.out.println(matcher.group());
+                    System.out.println(matcher.group()); //收藏
                 }
+
 
                 Elements scripts = document.select("script");
                 for (Element script : scripts) {
@@ -91,6 +95,11 @@ public class GetGoods {
         }
     }
 
+    /**
+     * 获取产品价格
+     * @param i
+     * @throws IOException
+     */
     public static void getPrice(int i) throws IOException {
         String url = "http://www.jiuxian.com/pro/selectProActByProId.htm";
         HttpPost httpPost = new HttpPost(url);
@@ -117,11 +126,21 @@ public class GetGoods {
         if(resp.getStatusLine().getStatusCode() == 200) {
             HttpEntity he = resp.getEntity();
             respContent = EntityUtils.toString(he,"UTF-8");
-            System.out.println(respContent);
+            JSONObject jsonObject = new JSONObject(respContent);
+            if(!jsonObject.isNull("act")){
+                System.out.println(jsonObject.getJSONObject("act").getDouble("markPrice"));
+            }
         }
     }
 
 
+    /**
+     * 保存商品图片
+     * @param urlString
+     * @param filename
+     * @param savePath
+     * @throws Exception
+     */
     public static void getGoodsImg(String urlString, String filename,String savePath) throws Exception {
             // 构造URL
         URL url = new URL(urlString);
@@ -159,6 +178,60 @@ public class GetGoods {
             return m.group().trim();
         }
         return null;
+    }
+
+    public static Connection getConnection(){
+        try {
+            return  DriverManager.getConnection("jdbc:mysql://192.168.59.4:3306/jsoup","root","Aa123456@zx");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static void insert(ReptileGoodsInfo info){
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement  = null;
+        try {
+            preparedStatement =  connection.prepareStatement("insert into reptile_goods_info(id,goods_sn,goods_name,sub_title,goods_type,goods_brand,place_origin,price,cover,ingesting_time,bottle_stopper,scent,grape_variety,collocation_food,storage_conditions,taste,net_content,color,carton_size,introduce,winery,description,materials,process)values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
+            preparedStatement.setLong(1, info.getId());
+            preparedStatement.setString(2, info.getGoodsSn());
+            preparedStatement.setString(3, info.getGoodsName());
+            preparedStatement.setString(4, info.getSubTitle());
+            preparedStatement.setString(5, info.getGoodsType());
+            preparedStatement.setString(6, info.getGoodsBrand());
+            preparedStatement.setString(7, info.getPlaceOrigin());
+            preparedStatement.setDouble(8, info.getPrice());
+            preparedStatement.setString(9, info.getCover());
+            preparedStatement.setString(10, info.getIngestingTime());
+            preparedStatement.setString(11, info.getBottleStopper());
+            preparedStatement.setString(12, info.getScent());
+            preparedStatement.setString(13, info.getGrapeVariety());
+            preparedStatement.setString(14, info.getCollocationFood());
+            preparedStatement.setString(15, info.getStorageConditions());
+            preparedStatement.setString(16, info.getTaste());
+            preparedStatement.setString(17, info.getNetContent());
+            preparedStatement.setString(18, info.getColor());
+            preparedStatement.setString(19, info.getCartonSize());
+            preparedStatement.setString(20, info.getIntroduce());
+            preparedStatement.setString(21, info.getWinery());
+            preparedStatement.setString(22, info.getDescription());
+            preparedStatement.setString(23, info.getMaterials());
+            preparedStatement.setString(24, info.getProcess());
+            int i= preparedStatement.executeUpdate();
+            System.out.println(i);
+            if(i>=1) {
+                System.out.println("新增：成功");
+            }else {
+                System.out.println("新增：失败");
+            }
+            preparedStatement.close();
+            connection.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }
