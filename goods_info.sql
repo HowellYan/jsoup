@@ -13,6 +13,9 @@
 
  Date: 10/08/2018 20:16:00
 */
+USE mysql;
+create database jsoup default character set utf8mb4 collate utf8mb4_unicode_ci;
+USE jsoup;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;

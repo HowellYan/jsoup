@@ -1,5 +1,14 @@
 package cn.com.howell.jiuxian;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,17 +18,20 @@ import org.jsoup.select.Elements;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GetGoods {
-    private static Pattern lbarr = Pattern.compile("lbarr\\[\\d+]=\\[\'http://([a-zA-Z0-9.\\/])+']");
+    private static Pattern lbarr = Pattern.compile("lbarr\\[\\d]+=\\[\'http://([a-zA-Z0-9.\\/])+']");
     private static Pattern BFD_INFO = Pattern.compile("_BFD.BFD_INFO = \\{");
     private static Pattern id = Pattern.compile("\"id\" : \"[\\u0000-\\uFFFF]+\"");
+    private static Pattern save = Pattern.compile("<span>收藏 （<em>[\\d]+</em>） </span></a>");
 
     public static void main(String[] args){
         //for (int i=1;i<10000;i++){
-            getGoodsJson(1);
+            getGoodsJson(2);
         //}
 
     }
@@ -30,11 +42,17 @@ public class GetGoods {
             Document document = Jsoup.connect("http://www.jiuxian.com/goods-"+i+".html").get();
             //System.out.println(document.toString());
             if(!document.title().contains("页面出错啦")) {
+                getPrice(i);
+                Matcher matcher = save.matcher(document.html());
+                while (matcher.find()){
+                    System.out.println(matcher.group());
+                }
+
                 Elements scripts = document.select("script");
                 for (Element script : scripts) {
                     String str = script.html();
                     //System.out.println(str);
-                    Matcher matcher = lbarr.matcher(str);
+                    matcher = lbarr.matcher(str);
                     int j = 0;
                     while (matcher.find()) {
                         String url = matcher.group()
@@ -44,6 +62,7 @@ public class GetGoods {
                         j++;
                         getGoodsImg(url, i+"_"+j+"_.jpg","d:\\image\\");
                     }
+
                     matcher = BFD_INFO.matcher(str);
                     if (matcher.find()) {
                         str = getVal(str, id)
@@ -72,6 +91,37 @@ public class GetGoods {
         }
     }
 
+    public static void getPrice(int i) throws IOException {
+        String url = "http://www.jiuxian.com/pro/selectProActByProId.htm";
+        HttpPost httpPost = new HttpPost(url);
+        CloseableHttpClient client = HttpClients.createDefault();
+        String respContent = null;
+//      json方式
+//        JSONObject jsonParam = new JSONObject();
+//        jsonParam.put("proId", i);
+//        jsonParam.put("resId", 2);
+//        StringEntity entity = new StringEntity(jsonParam.toString(),"utf-8");//解决中文乱码问题
+//        entity.setContentEncoding("UTF-8");
+//        entity.setContentType("application/json");
+//        httpPost.setEntity(entity);
+
+//       表单方式
+       List<BasicNameValuePair> pairList = new ArrayList<BasicNameValuePair>();
+       pairList.add(new BasicNameValuePair("proId", String.valueOf(i)));
+       pairList.add(new BasicNameValuePair("resId", "2"));
+       httpPost.setEntity(new UrlEncodedFormEntity(pairList, "utf-8"));
+       httpPost.setHeader("Content-Type","application/x-www-form-urlencoded; charset=UTF-8");
+
+
+        HttpResponse resp = client.execute(httpPost);
+        if(resp.getStatusLine().getStatusCode() == 200) {
+            HttpEntity he = resp.getEntity();
+            respContent = EntityUtils.toString(he,"UTF-8");
+            System.out.println(respContent);
+        }
+    }
+
+
     public static void getGoodsImg(String urlString, String filename,String savePath) throws Exception {
             // 构造URL
         URL url = new URL(urlString);
@@ -99,7 +149,7 @@ public class GetGoods {
         // 完毕，关闭所有链接
         os.close();
         is.close();
-
+        // TODO: 上传到文件服务器
     }
 
 
