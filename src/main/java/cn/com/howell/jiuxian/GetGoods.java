@@ -34,7 +34,7 @@ public class GetGoods {
     private static Pattern save = Pattern.compile("<span>收藏 （<em>[\\d]+</em>） </span></a>");
 
     public static void main(String[] args){
-        for (int i=1;i<10000;i++){
+        for (int i=1;i<100000;i++){
             getGoodsJson(i);
         }
 
@@ -158,7 +158,7 @@ public class GetGoods {
             HttpEntity he = resp.getEntity();
             respContent = EntityUtils.toString(he,"UTF-8");
             JSONObject jsonObject = new JSONObject(respContent);
-            if(!jsonObject.isNull("act")){
+            if(!jsonObject.isNull("act") && !jsonObject.getJSONObject("act").isNull("markPrice")){
                 return jsonObject.getJSONObject("act").getDouble("markPrice");
             }
         }
