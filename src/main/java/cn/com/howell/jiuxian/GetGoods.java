@@ -36,7 +36,7 @@ public class GetGoods {
     private static Pattern save = Pattern.compile("<span>收藏 （<em>[\\d]+</em>） </span></a>");
 
     public static void main(String[] args){
-        for (int i=1;i<100000;i++){
+        for (int i=1;i<1000000;i++){
             getGoodsJson(i);
         }
     }
@@ -94,7 +94,12 @@ public class GetGoods {
                         if (node.toString().contains("最佳饮用期")){
                             info.setBestDrinkingPeriod(node.childNode(1).childNode(0).toString());
                         }
-
+                        if (node.toString().contains("瓶塞")){
+                            info.setBottleStopper(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("酒庄")){
+                            info.setWinery(node.childNode(1).childNode(0).toString());
+                        }
                         return null;
                     }
 
@@ -123,7 +128,7 @@ public class GetGoods {
                                 .replaceAll("lbarr\\[\\d+]=\\[\'","");
                         System.out.println(url);
                         j++;
-                        getGoodsImg(url, i+"_"+j+"_.jpg","d:\\image\\");
+                        //getGoodsImg(url, i+"_"+j+"_.jpg","d:\\image\\");
                         if(info.getLbarr() == null){
                             info.setLbarr(url); // 轮播图片
                         }else{
@@ -155,8 +160,8 @@ public class GetGoods {
                         String net_content = jsonObject.getString("net_content");
                         String carton_size = jsonObject.getString("carton_size");
                         JSONArray category = jsonObject.getJSONArray("category").getJSONArray(0);
-                        getGoodsImg(image_link,i+"_image_link_.jpg","d:\\image\\");
-                        getGoodsImg(image_link,i+"_simage_link_.jpg","d:\\image\\");
+                        //getGoodsImg(image_link,i+"_image_link_.jpg","d:\\image\\");
+                        //getGoodsImg(image_link,i+"_simage_link_.jpg","d:\\image\\");
 
                         info.setGoodsName(name);
                         info.setGoodsType(category.getString(0));
