@@ -29,6 +29,11 @@ public class ReptileGoodsInfo {
   private String process;
   private long collection;
   private String lbarr;
+  private String mtl;
+  private String referenceYear;
+  private String level1;
+  private String bestDrinkingPeriod;
+
 
   public long getId() {
     return id;
@@ -260,5 +265,37 @@ public class ReptileGoodsInfo {
 
   public void setLbarr(String lbarr) {
     this.lbarr = lbarr;
+  }
+
+  public String getMtl() {
+    return mtl;
+  }
+
+  public void setMtl(String mtl) {
+    this.mtl = mtl;
+  }
+
+  public String getReferenceYear() {
+    return referenceYear;
+  }
+
+  public void setReferenceYear(String referenceYear) {
+    this.referenceYear = referenceYear;
+  }
+
+  public String getLevel1() {
+    return level1;
+  }
+
+  public void setLevel1(String level1) {
+    this.level1 = level1;
+  }
+
+  public String getBestDrinkingPeriod() {
+    return bestDrinkingPeriod;
+  }
+
+  public void setBestDrinkingPeriod(String bestDrinkingPeriod) {
+    this.bestDrinkingPeriod = bestDrinkingPeriod;
   }
 }

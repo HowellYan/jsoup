@@ -13,7 +13,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+import org.jsoup.select.NodeFilter;
 
 import java.io.*;
 import java.net.URL;
@@ -37,7 +39,6 @@ public class GetGoods {
         for (int i=1;i<100000;i++){
             getGoodsJson(i);
         }
-
     }
 
     public static void getGoodsJson(int i){
@@ -45,10 +46,63 @@ public class GetGoods {
         {
             Document document = Jsoup.connect("http://www.jiuxian.com/goods-"+i+".html").get();
             //System.out.println(document.toString());
+            Elements span = document.body().getElementsByClass("intrBox").select("span");
+
             if(!document.title().contains("页面出错啦")) {
-                ReptileGoodsInfo info = new ReptileGoodsInfo();
+                final ReptileGoodsInfo info = new ReptileGoodsInfo();
                 info.setId(i);
                 info.setPrice(getPrice(i));
+
+                System.out.println(span.filter(new NodeFilter() {
+                    public FilterResult head(Node node, int i) {
+                        if (node.toString().contains("原料")){
+                            info.setMaterials(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("储藏条件")){
+                            info.setStorageConditions(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("酿造工艺")){
+                            info.setProcess(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("色泽")){
+                            info.setColor(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("建议醒酒时间")){
+                            info.setIngestingTime(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("口感")){
+                            info.setTaste(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("搭配美食")){
+                            info.setCollocationFood(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("产区")){
+                            info.setPlaceOrigin(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("香味")){
+                            info.setScent(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("葡萄品种")){
+                            info.setGrapeVariety(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("参考年份")){
+                            info.setReferenceYear(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("等级1")){
+                            info.setLevel1(node.childNode(1).childNode(0).toString());
+                        }
+                        if (node.toString().contains("最佳饮用期")){
+                            info.setBestDrinkingPeriod(node.childNode(1).childNode(0).toString());
+                        }
+
+                        return null;
+                    }
+
+                    public FilterResult tail(Node node, int i) {
+                        return null;
+                    }
+                }));
+
 
                 Matcher matcher = save.matcher(document.html());
                 while (matcher.find()){
@@ -109,12 +163,13 @@ public class GetGoods {
                         info.setGoodsBrand(brand);
                         info.setWinery(winery);
                         info.setGoodsSn(sn);
-                        info.setScent(mtl);
+                        info.setMtl(mtl);
                         info.setCartonSize(carton_size);
                         info.setNetContent(net_content);
                         info.setCover(image_link+";"+simage_link);
                     }
                 }
+                // 入库
                 insert(info);
             }
         }
@@ -158,6 +213,7 @@ public class GetGoods {
             HttpEntity he = resp.getEntity();
             respContent = EntityUtils.toString(he,"UTF-8");
             JSONObject jsonObject = new JSONObject(respContent);
+            System.out.println(jsonObject.toString());
             if(!jsonObject.isNull("act") && !jsonObject.getJSONObject("act").isNull("markPrice")){
                 return jsonObject.getJSONObject("act").getDouble("markPrice");
             }
@@ -225,7 +281,7 @@ public class GetGoods {
         Connection connection = getConnection();
         PreparedStatement preparedStatement  = null;
         try {
-            preparedStatement =  connection.prepareStatement("insert into reptile_goods_info(id,goods_sn,goods_name,sub_title,goods_type,goods_brand,place_origin,price,cover,ingesting_time,bottle_stopper,scent,grape_variety,collocation_food,storage_conditions,taste,net_content,color,carton_size,introduce,winery,description,materials,process,collection,lbarr)values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
+            preparedStatement =  connection.prepareStatement("insert into reptile_goods_info(id,goods_sn,goods_name,sub_title,goods_type,goods_brand,place_origin,price,cover,ingesting_time,bottle_stopper,scent,grape_variety,collocation_food,storage_conditions,taste,net_content,color,carton_size,introduce,winery,description,materials,process,collection,lbarr,mtl,reference_year,level1,best_drinking_period)values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
             preparedStatement.setLong(1, info.getId());
             preparedStatement.setString(2, info.getGoodsSn());
             preparedStatement.setString(3, info.getGoodsName());
@@ -252,6 +308,11 @@ public class GetGoods {
             preparedStatement.setString(24, info.getProcess());
             preparedStatement.setLong(25, info.getCollection());
             preparedStatement.setString(26, info.getLbarr());
+            preparedStatement.setString(27, info.getMtl());
+            preparedStatement.setString(28, info.getReferenceYear());
+            preparedStatement.setString(29, info.getLevel1());
+            preparedStatement.setString(30, info.getBestDrinkingPeriod());
+
             int i= preparedStatement.executeUpdate();
             System.out.println(i);
             if(i>=1) {
