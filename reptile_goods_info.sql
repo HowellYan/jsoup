@@ -13,6 +13,9 @@
 
  Date: 13/08/2018 07:48:51
 */
+USE mysql;
+create database luckwine-spider default character set utf8mb4 collate utf8mb4_unicode_ci;
+USE luckwine-spider;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
