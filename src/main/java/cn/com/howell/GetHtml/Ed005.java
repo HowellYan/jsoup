@@ -19,6 +19,7 @@ import static java.lang.Thread.sleep;
 public class Ed005 {
     public static void main(String[] args){
         List<Map<String, String>>  mapList = getCodeJson(new ArrayList<Map<String, String>>(),"https://xingzhengquhua.bmcx.com", "", 10);
+        // todo 保存
         System.out.println(mapList.size());
     }
 
@@ -44,7 +45,7 @@ public class Ed005 {
                         stringStringMap.put("code", aList.get(1).html());
                     }
                     try {
-                        sleep(1000);
+                        sleep(5000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
